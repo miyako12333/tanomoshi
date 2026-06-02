@@ -262,9 +262,32 @@ let rawData;
 function loadData(){
   const saved=localStorage.getItem('tanomoshi_data');
   const savedCount=localStorage.getItem('tanomoshi_collected');
-  if(saved){try{rawData=JSON.parse(saved);if(savedCount)collectedCount=parseInt(savedCount);setSyncStatus('前回の保存データを読み込みました','ok');}catch(e){rawData=JSON.parse(JSON.stringify(defaultData));}}
+  if(saved){try{rawData=JSON.parse(saved);if(savedCount)collectedCount=parseInt(savedCount);}catch(e){rawData=JSON.parse(JSON.stringify(defaultData));}}
   else{rawData=JSON.parse(JSON.stringify(defaultData));}
   if(gasUrl&&document.getElementById('gasUrlInput'))document.getElementById('gasUrlInput').value=gasUrl;
+  if(gasUrl){setSyncStatus('クラウドから読み込み中...','');loadFromGAS();}
+  else{setSyncStatus('ローカルデータを読み込みました','ok');}
+}
+
+function loadFromGAS(){
+  if(!gasUrl)return;
+  fetch(gasUrl)
+    .then(r=>r.json())
+    .then(obj=>{
+      if(obj.status==='ok'&&obj.data){
+        rawData=obj.data;
+        collectedCount=obj.collectedCount||collectedCount;
+        localStorage.setItem('tanomoshi_data',JSON.stringify(rawData));
+        localStorage.setItem('tanomoshi_collected',String(collectedCount));
+        renderAll();
+        setSyncStatus('クラウドから読み込み完了','ok');
+      }else if(obj.status==='empty'){
+        setSyncStatus('クラウドにデータなし（ローカル使用中）','ok');
+      }else{
+        setSyncStatus('ローカルデータを使用中','ok');
+      }
+    })
+    .catch(()=>{setSyncStatus('ローカルデータを使用中','ok');});
 }
 
 function setSyncStatus(msg,cls){
