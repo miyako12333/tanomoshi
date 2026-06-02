@@ -359,7 +359,7 @@ function renderList(q=''){
         const v=m.payments[i],fut=i>=collectedCount,multi=v>1000;
         let cls='mo-cell'+(v>0?(multi?' paid multi':' paid'):'')+(fut?' future':'');
         const lbl=v>0?(multi?(v/1000)+'k':'✓'):(i+1);
-        cells+=`<div class="${cls}" title="${i+1}月: ¥${v.toLocaleString()}" onclick="togglePayment('${m.name}',${i})">${lbl}</div>`;
+        cells+=`<div class="${cls}" title="${i+1}月: ¥${v.toLocaleString()}" onclick="togglePayment('${m.name}',${i})" oncontextmenu="resetPayment('${m.name}',${i},event)" ontouchstart="startLongPress('${m.name}',${i})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">${lbl}</div>`;
       }
       row.innerHTML=`<span class="member-name">${m.name}</span><div class="months-grid">${cells}</div><span class="total-badge">¥${getTotalPaid(m).toLocaleString()}</span><span class="status-badge ${st.cls}">${st.label}</span>`;
       block.appendChild(row);
@@ -371,7 +371,17 @@ function renderList(q=''){
 function togglePayment(name,idx){
   if(idx>=collectedCount)return;
   const m=rawData.find(x=>x.name===name);if(!m)return;
-  m.payments[idx]=m.payments[idx]>0?0:1000;
+  // 1回押すごとに +1000円、上限10000円で0に戻る
+  const cur=m.payments[idx];
+  m.payments[idx]=cur>=10000?0:cur+1000;
+  setSyncStatus('未保存の変更があります','err');
+  renderAll();
+}
+function resetPayment(name,idx,e){
+  e.preventDefault();
+  if(idx>=collectedCount)return;
+  const m=rawData.find(x=>x.name===name);if(!m)return;
+  m.payments[idx]=0;
   setSyncStatus('未保存の変更があります','err');
   renderAll();
 }
@@ -498,6 +508,18 @@ function renderAll(){
   renderStats();
   renderList(document.getElementById('searchInput')?.value||'');
 }
+
+// 長押しリセット用タイマー
+let longPressTimer=null;
+function startLongPress(name,idx){
+  longPressTimer=setTimeout(()=>{
+    const m=rawData.find(x=>x.name===name);if(!m)return;
+    m.payments[idx]=0;
+    setSyncStatus("未保存の変更があります","err");
+    renderAll();
+  },600);
+}
+function cancelLongPress(){clearTimeout(longPressTimer);}
 
 loadData();
 renderAll();
