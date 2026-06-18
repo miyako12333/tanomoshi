@@ -109,6 +109,46 @@ h1{font-size:18px;font-weight:600;color:#26215C}
   .mo-cell{width:22px;height:22px;font-size:8px}
   .stats{grid-template-columns:repeat(3,1fr)}
 }
+/* ===== 印刷用レイアウト ===== */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea, #printArea *{visibility:visible}
+  #printArea{display:block !important;position:absolute;left:0;top:0;width:100%}
+  @page{size:A4;margin:12mm}
+}
+.print-page{page-break-after:always;font-family:'Hiragino Sans','Yu Gothic',sans-serif}
+.print-page:last-child{page-break-after:auto}
+.print-head{border-bottom:3px solid #534AB7;padding-bottom:10px;margin-bottom:14px}
+.print-head h2{font-size:22px;color:#26215C;font-weight:700}
+.print-head .sub{font-size:13px;color:#666;margin-top:4px}
+.print-summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.print-month-card{background:#F8F7FE;border-radius:8px;padding:10px;text-align:center;border:1px solid #e0dff8}
+.print-month-card .mo-name{font-size:14px;color:#534AB7;font-weight:700}
+.print-month-card .mo-amt{font-size:18px;font-weight:700;color:#26215C}
+.print-month-card .mo-cnt{font-size:12px;color:#888}
+.print-total{text-align:right;font-size:20px;font-weight:700;color:#534AB7;margin-bottom:18px}
+.print-section-title{font-size:16px;font-weight:700;color:#534AB7;border-bottom:2px solid #534AB7;padding-bottom:5px;margin-bottom:10px;margin-top:18px}
+.print-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.print-pill{font-size:14px;padding:5px 12px;border-radius:20px;border:1px solid}
+.print-pill.complete{background:#E1F5EE;color:#085041;border-color:#1D9E75}
+.print-pill.partial{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.print-pill.none{background:#FCEBEB;color:#791F1F;border-color:#E24B4A}
+.print-table{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.print-table th{background:#534AB7;color:#fff;padding:9px 6px;text-align:center;font-weight:700}
+.print-table th.name-col{text-align:left;padding-left:10px}
+.print-table td{padding:8px 6px;text-align:center;border-bottom:1px solid #e8e8f5;font-size:15px}
+.print-table td.name-td{text-align:left;padding-left:10px;font-weight:700;font-size:15px;color:#26215C}
+.print-table tr.fam-row td{background:#F0EFFB;font-weight:700;color:#534AB7;font-size:13px;padding:5px 10px}
+.print-table tr.row-complete td{background:#f0fdf8}
+.print-table tr.row-none td{background:#fff5f5}
+.print-cell-paid{color:#0F6E56;font-weight:700;font-size:16px}
+.print-cell-multi{color:#0C447C;font-weight:700;font-size:14px}
+.print-cell-none{color:#ccc}
+.print-status-c{color:#0F6E56;font-weight:700;font-size:13px}
+.print-status-p{color:#854F0B;font-weight:700;font-size:13px}
+.print-status-n{color:#A32D2D;font-weight:700;font-size:13px}
+.print-footer{text-align:right;font-size:11px;color:#999;margin-top:16px;border-top:1px solid #eee;padding-top:8px}
 </style>
 </head>
 <body>
@@ -146,11 +186,14 @@ h1{font-size:18px;font-weight:600;color:#26215C}
 
 <!-- 報告書タブ -->
 <div id="tab-report" style="display:none">
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px">
+    <button class="dl-btn" onclick="printReport()" style="background:#378ADD">&#128424; 印刷用PDF</button>
     <button class="dl-btn" onclick="downloadReport()">&#128247; 画像でダウンロード</button>
   </div>
   <div id="reportPreview"></div>
 </div>
+
+<div id="printArea"></div>
 
 <!-- 設定タブ -->
 <div id="tab-settings" style="display:none">
@@ -517,6 +560,110 @@ async function downloadReport(){
     a.href=canvas.toDataURL('image/png');a.click();
   }catch(e){alert('画像生成に失敗しました');}
   btn.innerHTML='&#128247; 画像でダウンロード';btn.disabled=false;
+}
+
+function buildPrintHTML(){
+  const monthly=Array(12).fill(0),mCount=Array(12).fill(0);
+  rawData.forEach(m=>m.payments.forEach((v,i)=>{if(v>0){monthly[i]+=v;mCount[i]++;}}));
+  const total=rawData.reduce((s,m)=>s+getTotalPaid(m),0);
+  const complete=rawData.filter(m=>getStatus(m)==='complete');
+  const partial=rawData.filter(m=>getStatus(m)==='partial');
+  const none=rawData.filter(m=>getStatus(m)==='none');
+  const now=new Date();
+  const dateStr=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 作成';
+
+  // ページ1: サマリー
+  let monthCards='';
+  for(let i=0;i<collectedCount;i++){
+    monthCards+=`<div class="print-month-card"><div class="mo-name">${i+1}月</div><div class="mo-amt">¥${monthly[i].toLocaleString()}</div><div class="mo-cnt">${mCount[i]}名</div></div>`;
+  }
+  function pills(arr,cls){
+    return arr.map(m=>{
+      const t=getTotalPaid(m),mo=collectedCount;
+      const sub=cls==='complete'?(t>mo*1000?' (+¥'+(t-mo*1000).toLocaleString()+')':''):(cls==='partial'?' ('+Math.floor(t/1000)+'/'+mo+'ヶ月)':' (0円)');
+      return `<span class="print-pill ${cls}">${m.name}${sub}</span>`;
+    }).join('');
+  }
+
+  let page1=`
+  <div class="print-page">
+    <div class="print-head">
+      <h2>たのもし 納入状況報告　${collectedCount}月末時点</h2>
+      <div class="sub">東京担当 宮下寛子 ／ ${dateStr}</div>
+    </div>
+    <div class="print-summary-grid">${monthCards}</div>
+    <div class="print-total">累計合計　¥${total.toLocaleString()}</div>
+    <div class="print-section-title">完納（${complete.length}名）</div>
+    <div class="print-pills">${pills(complete,'complete')}</div>
+    <div class="print-section-title">一部納入（${partial.length}名）</div>
+    <div class="print-pills">${pills(partial,'partial')}</div>
+    ${none.length?`<div class="print-section-title">未納（${none.length}名）</div><div class="print-pills">${pills(none,'none')}</div>`:''}
+    <div class="print-footer">たのもし東京グループ　集金担当：宮下寛子</div>
+  </div>`;
+
+  // ページ2以降: 明細表（家族単位を崩さず、1ページ約20行ずつに分割）
+  const families={};
+  rawData.forEach(m=>{if(!families[m.family])families[m.family]=[];families[m.family].push(m);});
+
+  let thCols='';
+  for(let i=0;i<collectedCount;i++) thCols+=`<th>${i+1}月</th>`;
+  thCols+=`<th>合計</th><th>状況</th>`;
+
+  const ROWS_PER_PAGE=22;
+  let pages=[];
+  let currentRows=[];
+  let currentCount=0;
+
+  Object.entries(families).forEach(([fam,members])=>{
+    // 家族＋メンバーをまとめて1ブロックとして扱う（途中で割らない）
+    const blockSize=members.length+1;
+    if(currentCount+blockSize>ROWS_PER_PAGE && currentRows.length>0){
+      pages.push(currentRows);
+      currentRows=[];
+      currentCount=0;
+    }
+    currentRows.push(`<tr class="fam-row"><td colspan="${collectedCount+3}">${fam}</td></tr>`);
+    currentCount++;
+    members.forEach(m=>{
+      const st=getStatus(m);
+      const t=getTotalPaid(m);
+      let tds='';
+      for(let i=0;i<collectedCount;i++){
+        const v=m.payments[i];
+        if(v===0) tds+=`<td><span class="print-cell-none">-</span></td>`;
+        else if(v===1000) tds+=`<td><span class="print-cell-paid">✓</span></td>`;
+        else tds+=`<td><span class="print-cell-multi">${v/1000}k</span></td>`;
+      }
+      const stLabel=st==='complete'?`<span class="print-status-c">完納✓</span>`:st==='partial'?`<span class="print-status-p">${Math.floor(t/1000)}/${collectedCount}月</span>`:`<span class="print-status-n">未納</span>`;
+      const rowCls=st==='complete'?'row-complete':st==='none'?'row-none':'';
+      currentRows.push(`<tr class="${rowCls}"><td class="name-td">${m.name}</td>${tds}<td style="font-weight:700">¥${t.toLocaleString()}</td><td>${stLabel}</td></tr>`);
+      currentCount++;
+    });
+  });
+  if(currentRows.length>0) pages.push(currentRows);
+
+  let detailPages='';
+  pages.forEach((rows,idx)=>{
+    detailPages+=`
+    <div class="print-page">
+      <div class="print-head">
+        <h2>全員の月別納入明細（${idx+1}/${pages.length}）</h2>
+        <div class="sub">たのもし 東京グループ ／ ${collectedCount}月末時点</div>
+      </div>
+      <table class="print-table">
+        <thead><tr><th class="name-col">名前</th>${thCols}</tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table>
+      <div class="print-footer">たのもし東京グループ　集金担当：宮下寛子</div>
+    </div>`;
+  });
+
+  return page1+detailPages;
+}
+
+function printReport(){
+  document.getElementById('printArea').innerHTML=buildPrintHTML();
+  setTimeout(()=>window.print(),100);
 }
 
 function switchTab(tab){
