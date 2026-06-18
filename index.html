@@ -115,31 +115,31 @@ h1{font-size:18px;font-weight:600;color:#26215C}
   body *{visibility:hidden}
   #printArea, #printArea *{visibility:visible}
   #printArea{display:block !important;position:absolute;left:0;top:0;width:100%}
-  @page{size:A4;margin:12mm}
+  @page{size:A4;margin:8mm}
 }
 .print-page{page-break-after:always;font-family:'Hiragino Sans','Yu Gothic',sans-serif}
 .print-page:last-child{page-break-after:auto}
-.print-head{border-bottom:2px solid #534AB7;padding-bottom:5px;margin-bottom:8px}
-.print-head h2{font-size:15px;color:#26215C;font-weight:700}
-.print-head .sub{font-size:10px;color:#666;margin-top:2px}
-.print-summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px}
-.print-month-card{background:#F8F7FE;border-radius:5px;padding:4px;text-align:center;border:1px solid #e0dff8}
+.print-head{border-bottom:2px solid #534AB7;padding-bottom:3px;margin-bottom:5px}
+.print-head h2{font-size:14px;color:#26215C;font-weight:700}
+.print-head .sub{font-size:9px;color:#666;margin-top:1px}
+.print-summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px}
+.print-month-card{background:#F8F7FE;border-radius:4px;padding:3px;text-align:center;border:1px solid #e0dff8}
 .print-month-card .mo-name{font-size:10px;color:#534AB7;font-weight:700}
 .print-month-card .mo-amt{font-size:12px;font-weight:700;color:#26215C}
 .print-month-card .mo-cnt{font-size:8px;color:#888}
-.print-total{text-align:right;font-size:13px;font-weight:700;color:#534AB7;margin-bottom:6px}
+.print-total{text-align:right;font-size:11px;font-weight:700;color:#534AB7;margin-bottom:4px}
 .print-section-title{font-size:10px;font-weight:700;color:#534AB7;border-bottom:1px solid #534AB7;padding-bottom:2px;margin-bottom:4px;margin-top:6px}
 .print-pills{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
 .print-pill{font-size:9px;padding:2px 6px;border-radius:14px;border:1px solid}
 .print-pill.complete{background:#E1F5EE;color:#085041;border-color:#1D9E75}
 .print-pill.partial{background:#FAEEDA;color:#633806;border-color:#EF9F27}
 .print-pill.none{background:#FCEBEB;color:#791F1F;border-color:#E24B4A}
-.print-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:4px}
-.print-table th{background:#534AB7;color:#fff;padding:3px 3px;text-align:center;font-weight:700;font-size:9px}
-.print-table th.name-col{text-align:left;padding-left:5px}
-.print-table td{padding:2px 3px;text-align:center;border-bottom:0.5px solid #e8e8f5;font-size:9px}
-.print-table td.name-td{text-align:left;padding-left:5px;font-weight:700;font-size:9px;color:#26215C}
-.print-table tr.fam-row td{background:#F0EFFB;font-weight:700;color:#534AB7;font-size:8px;padding:2px 5px}
+.print-table{width:100%;border-collapse:collapse;font-size:8px;margin-top:3px;line-height:1.1}
+.print-table th{background:#534AB7;color:#fff;padding:2px 2px;text-align:center;font-weight:700;font-size:8px;line-height:1.1}
+.print-table th.name-col{text-align:left;padding-left:4px}
+.print-table td{padding:1px 2px;text-align:center;border-bottom:0.5px solid #e8e8f5;font-size:8px;line-height:1.1}
+.print-table td.name-td{text-align:left;padding-left:4px;font-weight:700;font-size:8px;color:#26215C}
+.print-table tr.fam-row td{background:#F0EFFB;font-weight:700;color:#534AB7;font-size:7px;padding:1px 4px;line-height:1.1}
 .print-table tr.row-complete td{background:#f0fdf8}
 .print-table tr.row-none td{background:#fff5f5}
 .print-cell-paid{color:#0F6E56;font-weight:700;font-size:9px}
@@ -513,7 +513,7 @@ function buildReportHTML(){
   return `
   <div class="rp-head">
     <div class="rp-head-title">たのもし 納入状況報告　${collectedCount}月末時点</div>
-    <div class="rp-head-sub">東京担当 宮下寛子 ／ ${dateStr}</div>
+    <div class="rp-head-sub">本部 東京たのもし ／ ${dateStr}</div>
   </div>
   <div class="rp-body">
     <div class="rp-section">
@@ -541,7 +541,7 @@ function buildReportHTML(){
       </div>
     </div>
   </div>
-  <div class="rp-footer">たのもし東京グループ　集金担当：宮下寛子</div>`;
+  <div class="rp-footer">東京たのもし　集金担当：あられ</div>`;
 }
 
 function renderReport(){
@@ -588,7 +588,7 @@ function buildPrintHTML(){
   const summaryBlock=`
     <div class="print-head">
       <h2>たのもし 納入状況報告　${collectedCount}月末時点</h2>
-      <div class="sub">東京担当 宮下寛子 ／ ${dateStr}</div>
+      <div class="sub">本部 東京たのもし ／ ${dateStr}</div>
     </div>
     <div class="print-summary-grid">${monthCards}</div>
     <div class="print-total">累計合計　¥${total.toLocaleString()}　（完納${complete.length}名・一部納入${partial.length}名・未納${none.length}名）</div>
@@ -604,8 +604,8 @@ function buildPrintHTML(){
   thCols+=`<th>合計</th><th>状況</th>`;
 
   // 1ページ目はサマリー分のスペースを考慮して行数を減らす、2ページ目以降はフルに使う
-  const ROWS_PAGE1=58;
-  const ROWS_PAGE_N=78;
+  const ROWS_PAGE1=62;
+  const ROWS_PAGE_N=95;
 
   let pages=[];
   let currentRows=[];
@@ -644,13 +644,13 @@ function buildPrintHTML(){
   pages.forEach((rows,idx)=>{
     html+=`
     <div class="print-page">
-      ${idx===0?summaryBlock:`<div class="print-head"><h2>全員の月別納入明細（続き ${idx+1}/${pages.length}）</h2><div class="sub">たのもし 東京グループ ／ ${collectedCount}月末時点</div></div>`}
+      ${idx===0?summaryBlock:`<div class="print-head"><h2>全員の月別納入明細（続き ${idx+1}/${pages.length}）</h2><div class="sub">東京たのもし ／ ${collectedCount}月末時点</div></div>`}
       <div class="print-section-title">全員の月別納入明細${idx===0?'':''}</div>
       <table class="print-table">
         <thead><tr><th class="name-col">名前</th>${thCols}</tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table>
-      <div class="print-footer">たのもし東京グループ　集金担当：宮下寛子</div>
+      <div class="print-footer">東京たのもし　集金担当：あられ</div>
     </div>`;
   });
 
