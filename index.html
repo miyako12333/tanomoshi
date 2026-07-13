@@ -30,6 +30,7 @@ h1{font-size:18px;font-weight:600;color:#26215C}
 .family-header{padding:5px 12px;background:#F8F7FE;font-size:11px;font-weight:600;color:#534AB7}
 .member-row{display:flex;align-items:center;padding:7px 12px;border-top:0.5px solid #f0effe;gap:6px;flex-wrap:wrap}
 .member-name{font-size:13px;font-weight:600;color:#222;min-width:72px;flex-shrink:0}
+.member-num{font-size:10px;color:#aaa;min-width:22px;text-align:right;flex-shrink:0;font-weight:400}
 .months-grid{display:flex;gap:3px;flex-wrap:wrap;flex:1}
 .mo-cell{width:25px;height:25px;border-radius:5px;border:0.5px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;transition:all .15s;flex-shrink:0;background:#fff;color:#aaa;font-family:inherit}
 .mo-cell.paid{background:#E1F5EE;border-color:#1D9E75;color:#0F6E56;font-weight:700}
@@ -421,13 +422,14 @@ function renderList(q=''){
     members.forEach(m=>{
       const row=document.createElement('div');row.className='member-row';
       const st=getStatusLabel(m);let cells='';
+      const num=rawData.indexOf(m)+1;
       for(let i=0;i<12;i++){
         const v=m.payments[i],fut=i>=collectedCount,multi=v>1000;
         let cls='mo-cell'+(v>0?(multi?' paid multi':' paid'):'')+(fut?' future':'');
         const lbl=v>0?(multi?(v/1000)+'k':'✓'):(i+1);
         cells+=`<div class="${cls}" title="${i+1}月: ¥${v.toLocaleString()}" onclick="togglePayment('${m.name}',${i})" oncontextmenu="resetPayment('${m.name}',${i},event)" ontouchstart="startLongPress('${m.name}',${i})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">${lbl}</div>`;
       }
-      row.innerHTML=`<span class="member-name">${m.name}</span><div class="months-grid">${cells}</div><span class="total-badge">¥${getTotalPaid(m).toLocaleString()}</span><span class="status-badge ${st.cls}">${st.label}</span>`;
+      row.innerHTML=`<span class="member-num">${num}</span><span class="member-name">${m.name}</span><div class="months-grid">${cells}</div><span class="total-badge">¥${getTotalPaid(m).toLocaleString()}</span><span class="status-badge ${st.cls}">${st.label}</span>`;
       block.appendChild(row);
     });
     el.appendChild(block);
@@ -664,6 +666,9 @@ function printReport(){
 }
 
 function switchTab(tab){
+  if(tab!=='members'&&document.getElementById('syncStatus')&&document.getElementById('syncStatus').classList.contains('err')){
+    if(!confirm('未保存の変更があります。保存せずに移動しますか？')) return;
+  }
   ['members','report','settings'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'block':'none';});
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['members','report','settings'][i]===tab));
   if(tab==='report')renderReport();
@@ -687,6 +692,14 @@ function startLongPress(name,idx){
   },600);
 }
 function cancelLongPress(){clearTimeout(longPressTimer);}
+
+window.addEventListener('beforeunload', function(e){
+  if(document.getElementById('syncStatus')&&document.getElementById('syncStatus').classList.contains('err')){
+    e.preventDefault();
+    e.returnValue='未保存の変更があります。このページを離れますか？';
+    return e.returnValue;
+  }
+});
 
 loadData();
 renderAll();
